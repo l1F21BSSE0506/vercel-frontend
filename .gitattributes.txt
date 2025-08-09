@@ -1,0 +1,15 @@
+# Set default behavior to automatically normalize line endings
+* text=auto
+
+# Explicitly declare text files you want to always normalize
+*.js text
+*.env text
+*.json text
+*.jsx text
+
+# Declare files that should always retain CRLF
+*.bat text eol=crlf
+
+# Declare binary files that shouldn't be modified
+*.png binary
+*.jpg binary
