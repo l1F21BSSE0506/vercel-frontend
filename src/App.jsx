@@ -8,6 +8,7 @@ import Home from './pages/Home'
 import About from './pages/About'
 import Waiting from './pages/Waiting'
 import Login from './pages/Login'
+import Signup from './pages/Signup'
 import Bargain from './pages/Bargain'
 import SellerDashboard from './pages/SellerDashboard'
 
@@ -26,6 +27,7 @@ function App() {
                 <Route path="/about" element={<About />} />
                 <Route path="/waiting" element={<Waiting />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
                 <Route path="/bargain" element={<Bargain />} />
                 <Route path="/seller-dashboard" element={<SellerDashboard />} />
               </Routes>

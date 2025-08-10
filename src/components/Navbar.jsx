@@ -179,6 +179,12 @@ const Navbar = ({ onOpenChatList }) => {
                   Sign In
                 </Link>
                 <Link 
+                  to="/signup" 
+                  className="px-6 py-2.5 text-neutral-700 font-medium hover:text-neutral-900 transition-colors duration-300"
+                >
+                  Sign Up
+                </Link>
+                <Link 
                   to="/" 
                   className="px-6 py-2.5 bg-gradient-to-r from-neutral-800 to-neutral-900 hover:from-neutral-900 hover:to-neutral-800 text-white font-medium rounded-xl transition-all duration-300 hover:scale-105 shadow-elegant hover:shadow-luxury"
                 >
@@ -295,13 +301,22 @@ const Navbar = ({ onOpenChatList }) => {
                 </button>
               </>
             ) : (
-              <Link 
-                to="/login" 
-                className="block px-4 py-2 bg-gradient-to-r from-neutral-800 to-neutral-900 text-white font-medium rounded-lg transition-all duration-300 hover:scale-105"
-                onClick={() => setIsOpen(false)}
-              >
-                Sign In
-              </Link>
+              <>
+                <Link 
+                  to="/login" 
+                  className="block px-4 py-2 text-neutral-700 font-medium hover:bg-neutral-50 hover:text-neutral-900 transition-colors duration-300"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Sign In
+                </Link>
+                <Link 
+                  to="/signup" 
+                  className="block px-4 py-2 text-neutral-700 font-medium hover:bg-neutral-50 hover:text-neutral-900 transition-colors duration-300"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Sign Up
+                </Link>
+              </>
             )}
           </div>
         </div>
