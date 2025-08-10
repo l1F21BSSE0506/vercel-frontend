@@ -4,6 +4,9 @@
   "description": "A modern clothing website built with React and Tailwind CSS",
   "type": "module",
   "main": "index.js",
+  "engines": {
+    "node": "^18.18 || ^20.9 || >=22"
+  },
   "scripts": {
     "dev": "vite",
     "dev:full": "concurrently \"npm run dev\" \"cd backend && npm run dev\"",
