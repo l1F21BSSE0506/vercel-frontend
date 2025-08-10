@@ -1,16 +1,19 @@
 {
-  "buildCommand": "npm run build",
+  "version": 2,
+  "name": "threadswear-frontend",
+  "buildCommand": "rm -rf node_modules package-lock.json && npm install && npm run build",
   "outputDirectory": "dist",
   "installCommand": "npm install",
+  "framework": null,
   "functions": {
     "app/**": {
       "runtime": "nodejs18.x"
     }
   },
-  "rewrites": [
+  "routes": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
