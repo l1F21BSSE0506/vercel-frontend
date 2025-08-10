@@ -5,7 +5,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 
 // Load environment variables
-dotenv.config({ path: './config.env' });
+dotenv.config();
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -24,8 +24,6 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://localhost:3000',
-    'https://*.vercel.app',
-
     process.env.FRONTEND_URL
   ].filter(Boolean),
   credentials: true
@@ -44,7 +42,7 @@ app.get('/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString(),
     mongodb_uri_set: !!process.env.MONGODB_URI,
-    vercel: !!process.env.VERCEL
+    railway: !!process.env.RAILWAY
   });
 });
 
@@ -56,7 +54,7 @@ app.get('/api/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString(),
     mongodb_uri_set: !!process.env.MONGODB_URI,
-    vercel: !!process.env.VERCEL
+    railway: !!process.env.RAILWAY
   });
 });
 
@@ -65,7 +63,7 @@ app.get('/api/test', (req, res) => {
   res.json({ 
     message: 'API is working!',
     env: process.env.NODE_ENV,
-    vercel: !!process.env.VERCEL,
+    railway: !!process.env.RAILWAY,
     mongodb_uri_set: !!process.env.MONGODB_URI
   });
 });
