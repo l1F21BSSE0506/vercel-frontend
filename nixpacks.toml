@@ -1,0 +1,17 @@
+[variables]
+NODE_ENV = "production"
+
+[phases.setup]
+nixPkgs = ["nodejs"]
+
+[phases.install]
+cmds = [
+  "cd .railway",
+  "npm install --omit=dev --no-audit --no-fund"
+]
+
+[phases.build]
+cmds = ["echo 'Backend build completed'"]
+
+[start]
+cmd = "cd .railway && npm start"
