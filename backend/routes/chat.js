@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Chat = require('../models/Chat');
 const Product = require('../models/Product');
-const auth = require('../middleware/auth');
+const { isAuthenticatedUser: auth } = require('../middleware/auth');
 
 // Get all chats for a user (as buyer or seller)
 router.get('/my-chats', auth, async (req, res) => {
