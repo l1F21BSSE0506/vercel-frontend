@@ -1,7 +1,4 @@
-# Root level Railway ignore file
-# This ensures only the backend is deployed
-
-# Frontend files - COMPLETELY IGNORE
+# Ignore frontend files
 src/
 public/
 index.html
@@ -10,34 +7,10 @@ postcss.config.js
 tailwind.config.js
 frontend.env.example
 
-# Frontend dependencies - COMPLETELY IGNORE
-node_modules/
-package-lock.json
-
-# Development files - COMPLETELY IGNORE
-setup.js
-test-backend.js
-
-# Documentation - COMPLETELY IGNORE
-README.md
-RAILWAY_MIGRATION_SUMMARY.md
-BUILD_FIX_GUIDE.md
-
-# Root package files - COMPLETELY IGNORE
+# Ignore root package files
 package.json
 package-lock.json
+node_modules/
 
-# Keep ONLY railway-deploy directory (clean backend copy)
-!railway-deploy/
-!railway-deploy/package.json
-!railway-deploy/package-lock.json
-!railway-deploy/server.js
-!railway-deploy/routes/
-!railway-deploy/models/
-!railway-deploy/middleware/
-!railway-deploy/utils/
-!railway-deploy/api/
-!railway-deploy/scripts/
-!railway-deploy/uploads/
-!railway-deploy/env.example
-!railway-deploy/RAILWAY_DEPLOYMENT.md
+# Keep only backend
+!backend/
