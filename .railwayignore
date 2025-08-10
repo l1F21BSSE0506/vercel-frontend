@@ -27,17 +27,17 @@ BUILD_FIX_GUIDE.md
 package.json
 package-lock.json
 
-# Keep ONLY .railway directory (clean backend copy)
-!.railway/
-!.railway/package.json
-!.railway/package-lock.json
-!.railway/server.js
-!.railway/routes/
-!.railway/models/
-!.railway/middleware/
-!.railway/utils/
-!.railway/api/
-!.railway/scripts/
-!.railway/uploads/
-!.railway/env.example
-!.railway/RAILWAY_DEPLOYMENT.md
+# Keep ONLY railway-deploy directory (clean backend copy)
+!railway-deploy/
+!railway-deploy/package.json
+!railway-deploy/package-lock.json
+!railway-deploy/server.js
+!railway-deploy/routes/
+!railway-deploy/models/
+!railway-deploy/middleware/
+!railway-deploy/utils/
+!railway-deploy/api/
+!railway-deploy/scripts/
+!railway-deploy/uploads/
+!railway-deploy/env.example
+!railway-deploy/RAILWAY_DEPLOYMENT.md
