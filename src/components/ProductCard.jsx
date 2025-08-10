@@ -1,6 +1,7 @@
 import React from 'react';
+import { getCurrencyDisplay } from '../utils/currencyConverter';
 
-const ProductCard = ({ product, onClick, showBidding = false, onChatClick }) => {
+const ProductCard = ({ product, onClick, showBidding = false, onChatClick, showCurrency = true }) => {
   const getConditionColor = (condition) => {
     switch (condition) {
       case 'excellent': return 'bg-green-500';
@@ -33,7 +34,7 @@ const ProductCard = ({ product, onClick, showBidding = false, onChatClick }) => 
         
         {/* Price Badge */}
         <div className="absolute top-4 right-4 bg-gradient-to-r from-gold-500 to-gold-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-          ${product.price}
+          {getCurrencyDisplay(product.price, showCurrency)}
         </div>
         
         {/* Condition Badge */}
@@ -74,10 +75,10 @@ const ProductCard = ({ product, onClick, showBidding = false, onChatClick }) => 
         
         <div className="flex justify-between items-center">
           <div>
-            <span className="text-2xl font-elegant font-bold text-neutral-900">${product.price}</span>
+            <span className="text-2xl font-elegant font-bold text-neutral-900">{getCurrencyDisplay(product.price, showCurrency)}</span>
             {product.originalPrice && product.originalPrice > product.price && (
               <span className="text-sm text-neutral-500 line-through ml-2">
-                ${product.originalPrice}
+                {getCurrencyDisplay(product.originalPrice, showCurrency)}
               </span>
             )}
           </div>
@@ -85,7 +86,7 @@ const ProductCard = ({ product, onClick, showBidding = false, onChatClick }) => 
           {showBidding && product.isBiddingEnabled && product.currentBid > 0 && (
             <div className="text-right">
               <span className="text-sm text-neutral-500">Current Bid:</span>
-              <div className="text-lg font-bold text-red-600">${product.currentBid}</div>
+              <div className="text-lg font-bold text-red-600">{getCurrencyDisplay(product.currentBid, showCurrency)}</div>
             </div>
           )}
         </div>

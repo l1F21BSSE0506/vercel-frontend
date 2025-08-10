@@ -6,6 +6,7 @@ import ProductCard from '../components/ProductCard'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ChatInterface from '../components/ChatInterface'
 import ChatList from '../components/ChatList'
+import { getCurrencyDisplay } from '../utils/currencyConverter'
 
 const Home = ({ onSetChatHandler }) => {
   const { isAuthenticated } = useAuth()
@@ -32,6 +33,9 @@ const Home = ({ onSetChatHandler }) => {
   const [showChatList, setShowChatList] = useState(false)
   const [selectedChatProduct, setSelectedChatProduct] = useState(null)
   const [selectedChat, setSelectedChat] = useState(null)
+  
+  // Currency state
+  const [showCurrency, setShowCurrency] = useState(true)
 
   const categories = [
     { id: 'all', name: 'All Categories' },
@@ -191,6 +195,8 @@ const Home = ({ onSetChatHandler }) => {
     }
   }
 
+
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -216,29 +222,33 @@ const Home = ({ onSetChatHandler }) => {
         </div>
 
         {/* Content */}
-        <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-          <h1 className="text-5xl lg:text-7xl font-elegant font-bold text-white mb-6 drop-shadow-2xl animate-fade-in">
+        <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto animate-fade-in-up">
+          <h1 className="text-5xl lg:text-7xl font-elegant font-bold text-white mb-6 drop-shadow-2xl animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
             Quality Second-Hand,
             <span className="block bg-gradient-to-r from-gold-400 to-gold-600 bg-clip-text text-transparent">
               Imported Fashion
             </span>
           </h1>
-          <p className="text-xl lg:text-2xl text-neutral-200 mb-8 max-w-2xl mx-auto drop-shadow-lg animate-slide-up">
+          <p className="text-xl lg:text-2xl text-neutral-200 mb-8 max-w-2xl mx-auto drop-shadow-lg animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
             Discover our curated collection of quality second-hand imported clothing at flea market prices
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-slide-up" style={{ animationDelay: '0.2s' }}>
-            <Link 
-              to="/bargain" 
-              className="px-8 py-4 bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-600 hover:to-gold-700 text-white font-medium rounded-xl transition-all duration-300 hover:scale-105 shadow-elegant hover:shadow-luxury"
-            >
-              Explore Collection
-            </Link>
-            <Link 
-              to="/about" 
-              className="px-8 py-4 border-2 border-white/30 hover:border-white/50 text-white font-medium rounded-xl transition-all duration-300 hover:scale-105 backdrop-blur-sm"
-            >
-              Learn More
-            </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+            <div className="transform hover:scale-105 active:scale-95 transition-transform duration-300">
+              <Link 
+                to="/bargain" 
+                className="px-8 py-4 bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-600 hover:to-gold-700 text-white font-medium rounded-xl transition-all duration-300 shadow-elegant hover:shadow-luxury"
+              >
+                Explore Collection
+              </Link>
+            </div>
+            <div className="transform hover:scale-105 active:scale-95 transition-transform duration-300">
+              <Link 
+                to="/about" 
+                className="px-8 py-4 border-2 border-white/30 hover:border-white/50 text-white font-medium rounded-xl transition-all duration-300 backdrop-blur-sm"
+              >
+                Learn More
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -289,8 +299,17 @@ const Home = ({ onSetChatHandler }) => {
           
           {/* Category Filter */}
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-elegant font-bold text-neutral-900 mb-4">Featured Collection</h2>
-            <p className="text-lg text-neutral-600 mb-8">Explore our carefully curated selection of second-hand imported clothing</p>
+            <div className="flex flex-col items-center space-y-4 animate-fade-in-up">
+              <h2 className="text-4xl font-elegant font-bold text-neutral-900 mb-4">Featured Collection</h2>
+              <p className="text-lg text-neutral-600 mb-8">Explore our carefully curated selection of second-hand imported clothing</p>
+              
+              <button
+                onClick={() => setShowCurrency(!showCurrency)}
+                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+              >
+                {showCurrency ? 'Show USD Only' : 'Show PKR'}
+              </button>
+            </div>
             
             <div className="relative inline-block">
               <button
@@ -350,14 +369,19 @@ const Home = ({ onSetChatHandler }) => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredProducts.map((product, index) => (
-                <ProductCard
+                <div
                   key={product._id}
-                  product={product}
-                  onClick={handleProductClick}
-                  showBidding={true}
-                  onChatClick={isAuthenticated ? handleChatClick : null}
+                  className="transform hover:-translate-y-1 hover:scale-105 transition-all duration-300"
                   style={{ animationDelay: `${index * 0.1}s` }}
-                />
+                >
+                  <ProductCard
+                    product={product}
+                    onClick={handleProductClick}
+                    showBidding={true}
+                    onChatClick={isAuthenticated ? handleChatClick : null}
+                    showCurrency={showCurrency}
+                  />
+                </div>
               ))}
             </div>
           )}
