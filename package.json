@@ -1,13 +1,15 @@
 {
   "name": "threadswear-frontend",
   "version": "1.0.0",
-  "description": "Threadswear.pk Frontend - Modern clothing website built with React and Vite",
+  "description": "Threadswear.pk Frontend - Modern clothing website built with React",
   "type": "module",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
+    "build": "vite build --config vite.config.js",
+    "preview": "vite preview"
   },
   "dependencies": {
     "axios": "^1.11.0",
@@ -16,15 +18,10 @@
     "react-router-dom": "^6.8.0"
   },
   "devDependencies": {
-    "@types/react": "^18.0.27",
-    "@types/react-dom": "^18.0.10",
     "@vitejs/plugin-react": "^4.0.0",
     "autoprefixer": "^10.4.13",
     "postcss": "^8.4.21",
     "tailwindcss": "^3.2.4",
     "vite": "^4.4.5"
-  },
-  "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "^4.0.0"
   }
 }
