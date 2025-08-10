@@ -2,7 +2,7 @@
 nixPkgs = ["nodejs", "npm"]
 
 [phases.install]
-cmds = ["npm ci --omit=dev --no-audit --no-fund"]
+cmds = ["npm install --only=production --no-audit --no-fund"]
 
 [phases.build]
 cmds = ["echo 'Build completed'"]
