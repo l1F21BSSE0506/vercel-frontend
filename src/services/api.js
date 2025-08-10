@@ -74,4 +74,19 @@ export const usersAPI = {
   delete: (id) => api.delete(`/users/${id}`),
 };
 
+// Chat API
+export const chatAPI = {
+  getMyChats: () => api.get('/chat/my-chats'),
+  getChat: (chatId) => api.get(`/chat/${chatId}`),
+  startChat: (data) => api.post('/chat/start-chat', data),
+  sendMessage: (chatId, message) => api.post(`/chat/${chatId}/send-message`, { message }),
+  markAsRead: (chatId) => api.put(`/chat/${chatId}/mark-read`),
+  closeChat: (chatId) => api.put(`/chat/${chatId}/close`),
+};
+
+// Individual chat functions for easier use
+export const startChat = (data) => api.post('/chat/start-chat', data);
+export const sendMessage = (chatId, message) => api.post(`/chat/${chatId}/send-message`, { message });
+export const getChat = (chatId) => api.get(`/chat/${chatId}`);
+
 export default api; 

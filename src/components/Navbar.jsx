@@ -1,12 +1,40 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { chatAPI } from '../services/api';
 
 const Navbar = ({ onOpenChatList }) => {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isScrolled, setIsScrolled] = useState(false)
-  const location = useLocation()
-  const { user, isAuthenticated, logout } = useAuth()
+  const { user, isAuthenticated, logout } = useAuth();
+  const location = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Fetch unread chat count
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchUnreadCount();
+      // Set up interval to check for new messages every 30 seconds
+      const interval = setInterval(fetchUnreadCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated]);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await chatAPI.getMyChats();
+      if (response.success) {
+        const totalUnread = response.data.reduce((total, chat) => {
+          return total + chat.messages.filter(msg => 
+            !msg.isRead && msg.senderId !== user?._id
+          ).length;
+        }, 0);
+        setUnreadCount(totalUnread);
+      }
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -101,15 +129,20 @@ const Navbar = ({ onOpenChatList }) => {
           <div className="hidden lg:flex items-center space-x-4">
             {isAuthenticated ? (
               <>
-                {/* Chat Button */}
+                {/* Chat Button with Notification Badge */}
                 <button
                   onClick={onOpenChatList}
-                  className="px-4 py-2.5 text-neutral-700 font-medium hover:text-neutral-900 transition-colors duration-300 flex items-center space-x-2"
+                  className="px-4 py-2.5 text-neutral-700 font-medium hover:text-neutral-900 transition-colors duration-300 flex items-center space-x-2 relative"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                   <span>Chats</span>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium animate-pulse">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
                 </button>
                 
                 {user?.role === 'seller' && (
@@ -221,6 +254,27 @@ const Navbar = ({ onOpenChatList }) => {
             </Link>
             {isAuthenticated ? (
               <>
+                {/* Mobile Chat Button with Notification Badge */}
+                <button
+                  onClick={() => {
+                    onOpenChatList();
+                    setIsOpen(false);
+                  }}
+                  className="block w-full px-4 py-2 text-neutral-700 font-medium hover:bg-neutral-50 hover:text-neutral-900 transition-colors duration-300 text-left flex items-center justify-between"
+                >
+                  <span className="flex items-center space-x-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    <span>Chats</span>
+                  </span>
+                  {unreadCount > 0 && (
+                    <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+                
                 {user?.role === 'seller' && (
                   <Link 
                     to="/seller-dashboard" 

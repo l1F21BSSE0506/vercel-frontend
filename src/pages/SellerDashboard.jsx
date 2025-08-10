@@ -1,73 +1,67 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-const API_BASE_URL = import.meta?.env?.VITE_API_URL || 'http://localhost:5000/api';
+import { useAuth } from '../context/AuthContext';
+import { chatAPI, productsAPI } from '../services/api';
+import { getCurrencyDisplay } from '../utils/currencyConverter';
 
 const SellerDashboard = () => {
-  const [user, setUser] = useState(null);
-  const [stats, setStats] = useState({
-    totalProducts: 0,
-    totalOrders: 0,
-    totalUsers: 0,
-    totalRevenue: 0
-  });
-  const [products, setProducts] = useState([]);
-  const [orders, setOrders] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('chats');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  const navigate = useNavigate();
+  // Chat state
+  const [chats, setChats] = useState([]);
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [newMessage, setNewMessage] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
+  
+  // Products state
+  const [products, setProducts] = useState([]);
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    totalChats: 0,
+    activeChats: 0
+  });
 
   // Check authentication and role on component mount
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userRole = localStorage.getItem('userRole');
-    
-    if (!token || userRole !== 'admin') {
+    if (!isAuthenticated) {
       navigate('/login');
       return;
     }
 
-    fetchUserData();
-    fetchDashboardData();
-  }, [navigate]);
-
-  const fetchUserData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setUser(response.data.user);
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-      setError('Failed to fetch user data');
+    if (user?.role !== 'seller' && user?.role !== 'admin') {
+      navigate('/');
+      return;
     }
-  };
+
+    fetchDashboardData();
+  }, [isAuthenticated, user, navigate]);
 
   const fetchDashboardData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-
-      // Fetch stats
-      const statsResponse = await axios.get(`${API_BASE_URL}/users/admin/stats`, { headers });
-      const productsResponse = await axios.get(`${API_BASE_URL}/products/admin/all`, { headers });
-      const ordersResponse = await axios.get(`${API_BASE_URL}/orders/admin/all`, { headers });
-      const usersResponse = await axios.get(`${API_BASE_URL}/auth/admin/users`, { headers });
-
+      setLoading(true);
+      
+      // Fetch seller's products
+      const productsResponse = await productsAPI.getSellerProducts();
+      setProducts(productsResponse.data.products || []);
+      
+      // Fetch seller's chats
+      const chatsResponse = await chatAPI.getMyChats();
+      const sellerChats = chatsResponse.data.filter(chat => 
+        chat.sellerId._id === user._id || chat.sellerId === user._id
+      );
+      setChats(sellerChats);
+      
+      // Calculate stats
       setStats({
-        totalProducts: productsResponse.data.count,
-        totalOrders: ordersResponse.data.count,
-        totalUsers: usersResponse.data.count,
-        totalRevenue: ordersResponse.data.totalAmount || 0
+        totalProducts: productsResponse.data.products?.length || 0,
+        totalChats: sellerChats.length,
+        activeChats: sellerChats.filter(chat => chat.status === 'active').length
       });
       
-      setProducts(productsResponse.data.products);
-      setOrders(ordersResponse.data.orders);
-      setUsers(usersResponse.data.users);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -76,412 +70,352 @@ const SellerDashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userRole');
-    navigate('/');
-  };
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedChat) return;
 
-  const updateProductStatus = async (productId, isAvailable) => {
+    setSendingMessage(true);
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(`${API_BASE_URL}/products/admin/${productId}/status`, 
-        { isAvailable }, 
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      fetchDashboardData(); // Refresh data
+      const response = await chatAPI.sendMessage(selectedChat._id, newMessage.trim());
+      
+      if (response.success) {
+        // Update the chat in the list
+        setChats(prevChats => 
+          prevChats.map(chat => 
+            chat._id === selectedChat._id ? response.data : chat
+          )
+        );
+        
+        // Update selected chat
+        setSelectedChat(response.data);
+        setNewMessage('');
+      }
     } catch (error) {
-      console.error('Error updating product status:', error);
+      console.error('Error sending message:', error);
+    } finally {
+      setSendingMessage(false);
     }
   };
 
-  const updateOrderStatus = async (orderId, orderStatus) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.put(`${API_BASE_URL}/orders/admin/${orderId}`, 
-        { orderStatus }, 
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      fetchDashboardData(); // Refresh data
-    } catch (error) {
-      console.error('Error updating order status:', error);
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
     }
   };
+
+  const formatTime = (timestamp) => {
+    return new Date(timestamp).toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
+
+  const formatDate = (timestamp) => {
+    return new Date(timestamp).toLocaleDateString();
+  };
+
+  const getUnreadCount = (chat) => {
+    return chat.messages.filter(msg => 
+      !msg.isRead && msg.senderId !== user._id
+    ).length;
+  };
+
+  const markChatAsRead = async (chatId) => {
+    try {
+      await chatAPI.markAsRead(chatId);
+      // Update local state
+      setChats(prevChats => 
+        prevChats.map(chat => 
+          chat._id === chatId 
+            ? { ...chat, messages: chat.messages.map(msg => ({ ...msg, isRead: true })) }
+            : chat
+        )
+      );
+    } catch (error) {
+      console.error('Error marking chat as read:', error);
+    }
+  };
+
+  if (!isAuthenticated || (user?.role !== 'seller' && user?.role !== 'admin')) {
+    return null;
+  }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-neutral-900 mx-auto"></div>
-          <p className="mt-4 text-neutral-600">Loading Dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="btn-primary"
-          >
-            Retry
-          </button>
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100">
-      {/* Header */}
-      <header className="bg-white shadow-elegant border-b border-neutral-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-gradient-to-r from-neutral-900 to-neutral-700 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                T
-              </div>
-              <div className="ml-3">
-                <h1 className="text-2xl font-bold text-neutral-900">Threadswear.pk</h1>
-                <p className="text-sm text-neutral-600">Admin Dashboard</p>
-              </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Seller Dashboard</h1>
+              <p className="text-gray-600 mt-2">Welcome back, {user?.name}!</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-neutral-600">Welcome, {user?.name}</span>
-              <button 
-                onClick={handleLogout}
-                className="btn-secondary"
-              >
-                Logout
-              </button>
+            <div className="text-right">
+              <p className="text-sm text-gray-500">Role</p>
+              <p className="text-lg font-semibold text-blue-600 capitalize">{user?.role}</p>
             </div>
           </div>
         </div>
-      </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Navigation Tabs */}
-        <div className="mb-8">
-          <nav className="flex space-x-8">
-            {[
-              { id: 'dashboard', name: 'Dashboard', icon: '📊' },
-              { id: 'products', name: 'Products', icon: '👕' },
-              { id: 'orders', name: 'Orders', icon: '📦' },
-              { id: 'users', name: 'Users', icon: '👥' }
-            ].map((tab) => (
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="p-3 bg-blue-100 rounded-full">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Products</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalProducts}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="p-3 bg-green-100 rounded-full">
+                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Chats</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalChats}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="p-3 bg-yellow-100 rounded-full">
+                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Active Chats</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.activeChats}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="bg-white rounded-lg shadow-sm mb-8">
+          <div className="border-b border-gray-200">
+            <nav className="flex space-x-8 px-6">
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                  activeTab === tab.id
-                    ? 'bg-neutral-900 text-white shadow-elegant'
-                    : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200'
+                onClick={() => setActiveTab('chats')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'chats'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                <span>{tab.icon}</span>
-                <span>{tab.name}</span>
+                Customer Chats
               </button>
-            ))}
-          </nav>
-        </div>
-
-        {/* Dashboard Overview */}
-        {activeTab === 'dashboard' && (
-          <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-neutral-900">Dashboard Overview</h2>
-            
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white rounded-xl shadow-elegant p-6">
-                <div className="flex items-center">
-                  <div className="p-3 bg-blue-100 rounded-lg">
-                    <span className="text-2xl">👕</span>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-neutral-600">Total Products</p>
-                    <p className="text-2xl font-bold text-neutral-900">{stats.totalProducts}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl shadow-elegant p-6">
-                <div className="flex items-center">
-                  <div className="p-3 bg-green-100 rounded-lg">
-                    <span className="text-2xl">📦</span>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-neutral-600">Total Orders</p>
-                    <p className="text-2xl font-bold text-neutral-900">{stats.totalOrders}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl shadow-elegant p-6">
-                <div className="flex items-center">
-                  <div className="p-3 bg-purple-100 rounded-lg">
-                    <span className="text-2xl">👥</span>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-neutral-600">Total Users</p>
-                    <p className="text-2xl font-bold text-neutral-900">{stats.totalUsers}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl shadow-elegant p-6">
-                <div className="flex items-center">
-                  <div className="p-3 bg-yellow-100 rounded-lg">
-                    <span className="text-2xl">💰</span>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-neutral-600">Total Revenue</p>
-                    <p className="text-2xl font-bold text-neutral-900">₹{stats.totalRevenue.toLocaleString()}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white rounded-xl shadow-elegant p-6">
-                <h3 className="text-lg font-semibold text-neutral-900 mb-4">Recent Orders</h3>
-                <div className="space-y-3">
-                  {orders.slice(0, 5).map((order) => (
-                    <div key={order._id} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-neutral-900">Order #{order._id.slice(-6)}</p>
-                        <p className="text-sm text-neutral-600">{order.user?.name}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium text-neutral-900">₹{order.totalPrice}</p>
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          order.orderStatus === 'Delivered' ? 'bg-green-100 text-green-800' :
-                          order.orderStatus === 'Shipped' ? 'bg-blue-100 text-blue-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {order.orderStatus}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl shadow-elegant p-6">
-                <h3 className="text-lg font-semibold text-neutral-900 mb-4">Recent Products</h3>
-                <div className="space-y-3">
-                  {products.slice(0, 5).map((product) => (
-                    <div key={product._id} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-neutral-900">{product.name}</p>
-                        <p className="text-sm text-neutral-600">{product.category}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium text-neutral-900">₹{product.price}</p>
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          product.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {product.isAvailable ? 'Available' : 'Unavailable'}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+              <button
+                onClick={() => setActiveTab('products')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'products'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                My Products
+              </button>
+            </nav>
           </div>
-        )}
 
-        {/* Products Management */}
-        {activeTab === 'products' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-3xl font-bold text-neutral-900">Products Management</h2>
-              <button className="btn-primary">Add New Product</button>
-            </div>
-            
-            <div className="bg-white rounded-xl shadow-elegant overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-neutral-200">
-                  <thead className="bg-neutral-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Product</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Category</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Price</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Stock</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-neutral-200">
-                    {products.map((product) => (
-                      <tr key={product._id}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="w-10 h-10 bg-neutral-200 rounded-lg flex items-center justify-center">
-                              <span className="text-neutral-600">👕</span>
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-neutral-900">{product.name}</div>
-                              <div className="text-sm text-neutral-500">{product.brand}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{product.category}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">₹{product.price}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{product.stock}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            product.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {product.isAvailable ? 'Available' : 'Unavailable'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button
-                            onClick={() => updateProductStatus(product._id, !product.isAvailable)}
-                            className={`mr-2 px-3 py-1 rounded-md text-xs ${
-                              product.isAvailable 
-                                ? 'bg-red-100 text-red-800 hover:bg-red-200' 
-                                : 'bg-green-100 text-green-800 hover:bg-green-200'
+          {/* Tab Content */}
+          <div className="p-6">
+            {activeTab === 'chats' && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Chat List */}
+                <div className="lg:col-span-1">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Customer Conversations</h3>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {chats.length === 0 ? (
+                      <p className="text-gray-500 text-center py-8">No customer chats yet</p>
+                    ) : (
+                      chats.map((chat) => {
+                        const unreadCount = getUnreadCount(chat);
+                        const lastMessage = chat.messages[chat.messages.length - 1];
+                        const isSelected = selectedChat?._id === chat._id;
+                        
+                        return (
+                          <div
+                            key={chat._id}
+                            onClick={() => {
+                              setSelectedChat(chat);
+                              if (unreadCount > 0) {
+                                markChatAsRead(chat._id);
+                              }
+                            }}
+                            className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                              isSelected
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                             }`}
                           >
-                            {product.isAvailable ? 'Disable' : 'Enable'}
-                          </button>
-                          <button className="text-neutral-600 hover:text-neutral-900">Edit</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Orders Management */}
-        {activeTab === 'orders' && (
-          <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-neutral-900">Orders Management</h2>
-            
-            <div className="bg-white rounded-xl shadow-elegant overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-neutral-200">
-                  <thead className="bg-neutral-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Order ID</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Customer</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Amount</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-neutral-200">
-                    {orders.map((order) => (
-                      <tr key={order._id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">
-                          #{order._id.slice(-6)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-neutral-900">{order.user?.name}</div>
-                          <div className="text-sm text-neutral-500">{order.user?.email}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">₹{order.totalPrice}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <select
-                            value={order.orderStatus}
-                            onChange={(e) => updateOrderStatus(order._id, e.target.value)}
-                            className="text-sm border border-neutral-300 rounded-md px-2 py-1"
-                          >
-                            <option value="Processing">Processing</option>
-                            <option value="Shipped">Shipped</option>
-                            <option value="Delivered">Delivered</option>
-                            <option value="Cancelled">Cancelled</option>
-                          </select>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                          {new Date(order.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button className="text-neutral-600 hover:text-neutral-900">View Details</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Users Management */}
-        {activeTab === 'users' && (
-          <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-neutral-900">Users Management</h2>
-            
-            <div className="bg-white rounded-xl shadow-elegant overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-neutral-200">
-                  <thead className="bg-neutral-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">User</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Email</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Role</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Joined</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-neutral-200">
-                    {users.map((user) => (
-                      <tr key={user._id}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="w-10 h-10 bg-neutral-200 rounded-full flex items-center justify-center">
-                              <span className="text-neutral-600 font-medium">{user.name.charAt(0)}</span>
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-medium text-gray-900 text-sm">
+                                {chat.productId?.name || 'Product'}
+                              </h4>
+                              {unreadCount > 0 && (
+                                <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1">
+                                  {unreadCount}
+                                </span>
+                              )}
                             </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-neutral-900">{user.name}</div>
+                            <p className="text-xs text-gray-600 mb-1">
+                              {chat.buyerId?.name || 'Customer'}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {lastMessage?.message || 'No messages yet'}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-2">
+                              {formatDate(chat.lastMessageAt)}
+                            </p>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* Chat Interface */}
+                <div className="lg:col-span-2">
+                  {selectedChat ? (
+                    <div className="bg-white border border-gray-200 rounded-lg h-96 flex flex-col">
+                      {/* Chat Header */}
+                      <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 rounded-t-lg">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-semibold text-gray-900">
+                              {selectedChat.productId?.name || 'Product'}
+                            </h4>
+                            <p className="text-sm text-gray-600">
+                              Chat with {selectedChat.buyerId?.name || 'Customer'}
+                            </p>
+                          </div>
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            selectedChat.status === 'active' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {selectedChat.status}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Messages */}
+                      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                        {selectedChat.messages.map((message) => (
+                          <div
+                            key={message._id}
+                            className={`flex ${message.senderId === user._id ? 'justify-end' : 'justify-start'}`}
+                          >
+                            <div className={`max-w-xs px-3 py-2 rounded-lg ${
+                              message.senderId === user._id
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              <p className="text-sm">{message.message}</p>
+                              <p className="text-xs opacity-70 mt-1">
+                                {formatTime(message.timestamp)}
+                              </p>
                             </div>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{user.email}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
-                            user.role === 'seller' ? 'bg-blue-100 text-blue-800' :
-                            'bg-green-100 text-green-800'
-                          }`}>
-                            {user.role}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            user.isVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {user.isVerified ? 'Verified' : 'Pending'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                          {new Date(user.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button className="text-neutral-600 hover:text-neutral-900 mr-2">Edit</button>
-                          <button className="text-red-600 hover:text-red-900">Delete</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        ))}
+                      </div>
+
+                      {/* Message Input */}
+                      <div className="p-4 border-t border-gray-200">
+                        <div className="flex space-x-3">
+                          <input
+                            type="text"
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                            placeholder="Type your message..."
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            disabled={sendingMessage}
+                          />
+                          <button
+                            onClick={handleSendMessage}
+                            disabled={!newMessage.trim() || sendingMessage}
+                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+                          >
+                            {sendingMessage ? 'Sending...' : 'Send'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-white border border-gray-200 rounded-lg h-96 flex items-center justify-center">
+                      <div className="text-center text-gray-500">
+                        <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        <p className="text-lg font-medium">Select a chat to start messaging</p>
+                        <p className="text-sm">Choose a customer conversation from the left to respond to their inquiries</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
+
+            {activeTab === 'products' && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">My Products</h3>
+                {products.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">No products listed yet</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {products.map((product) => (
+                      <div key={product._id} className="bg-white border border-gray-200 rounded-lg p-4">
+                        <img
+                          src={product.images?.[0] || 'https://via.placeholder.com/300x200'}
+                          alt={product.name}
+                          className="w-full h-48 object-cover rounded-lg mb-4"
+                        />
+                        <h4 className="font-semibold text-gray-900 mb-2">{product.name}</h4>
+                        <p className="text-lg font-bold text-green-600 mb-2">
+                          {getCurrencyDisplay(product.price, true)}
+                        </p>
+                        <p className="text-sm text-gray-600 mb-3">{product.description}</p>
+                        <div className="flex items-center justify-between">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            product.isAvailable 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {product.isAvailable ? 'Available' : 'Sold'}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {product.category}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

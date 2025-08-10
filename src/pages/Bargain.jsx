@@ -1,15 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { getCurrencyDisplay, convertUSDToPKR, formatPKR } from '../utils/currencyConverter';
+import { sendMessage, startChat, getChat } from '../services/api';
 
 const Bargain = () => {
+  const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [currentChat, setCurrentChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [offerAmount, setOfferAmount] = useState('');
   const [isNegotiating, setIsNegotiating] = useState(false);
   const [showCurrency, setShowCurrency] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
+  const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
   const bargainProducts = [
@@ -62,131 +68,147 @@ const Bargain = () => {
     scrollToBottom();
   }, [messages]);
 
-  const startBargain = (product) => {
+  // Check if user is authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, navigate]);
+
+  const startBargain = async (product) => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
     setSelectedProduct(product);
     setIsNegotiating(true);
-    setMessages([
-      {
-        id: 1,
-        sender: 'seller',
-        message: `Hello! I'm ${product.seller}. I'm excited to help you with ${product.name}. What would you like to know about this item?`,
-        type: 'message',
-        timestamp: new Date()
+    setLoading(true);
+
+    try {
+      // Start a new chat with the seller
+      const initialMessage = `Hi! I'm interested in ${product.name}. Can you tell me more about this item?`;
+      
+      const response = await startChat({
+        productId: product.id,
+        message: initialMessage
+      });
+
+      if (response.success) {
+        setCurrentChat(response.data);
+        setMessages(response.data.messages);
+      } else {
+        console.error('Failed to start chat:', response.message);
       }
-    ]);
-  };
-
-  const sendMessage = () => {
-    if (newMessage.trim()) {
-      const userMessage = {
-        id: messages.length + 1,
-        sender: 'user',
-        message: newMessage,
-        type: 'message',
-        timestamp: new Date()
-      };
-      setMessages([...messages, userMessage]);
-      setNewMessage('');
-      setIsTyping(true);
-      
-      // Simulate seller response
-      setTimeout(() => {
-        setIsTyping(false);
-        const sellerResponse = {
-          id: messages.length + 2,
-          sender: 'seller',
-          message: generateSellerResponse(newMessage),
-          type: 'message',
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, sellerResponse]);
-      }, 1000 + Math.random() * 2000);
+    } catch (error) {
+      console.error('Error starting chat:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const makeOffer = () => {
-    if (offerAmount.trim() && !isNaN(offerAmount)) {
-      const offerMessage = {
-        id: messages.length + 1,
-        sender: 'user',
-        message: `I'd like to offer ${getCurrencyDisplay(offerAmount, showCurrency)} for this item.`,
-        type: 'offer',
-        amount: parseFloat(offerAmount),
-        timestamp: new Date()
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !currentChat) return;
+
+    const messageToSend = newMessage.trim();
+    setNewMessage('');
+    setLoading(true);
+
+    try {
+      // Add message to local state immediately for better UX
+      const tempMessage = {
+        _id: Date.now(), // Temporary ID
+        senderId: user._id,
+        message: messageToSend,
+        timestamp: new Date(),
+        isRead: false
       };
-      setMessages([...messages, offerMessage]);
-      setOfferAmount('');
-      setIsTyping(true);
-      
-      // Simulate seller counter-offer
-      setTimeout(() => {
-        setIsTyping(false);
-        const counterOffer = generateCounterOffer(parseFloat(offerAmount));
-        const sellerResponse = {
-          id: messages.length + 2,
-          sender: 'seller',
-          message: `Thank you for your offer! I can offer you ${getCurrencyDisplay(counterOffer, showCurrency)}. What do you think?`,
-          type: 'counter-offer',
-          amount: counterOffer,
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, sellerResponse]);
-      }, 1500 + Math.random() * 2000);
+      setMessages(prev => [...prev, tempMessage]);
+
+      // Send message to backend
+      const response = await sendMessage(currentChat._id, messageToSend);
+
+      if (response.success) {
+        // Update with real message from backend
+        setMessages(response.data.messages);
+        setCurrentChat(response.data);
+      } else {
+        // Remove temporary message if failed
+        setMessages(prev => prev.filter(msg => msg._id !== tempMessage._id));
+        console.error('Failed to send message:', response.message);
+      }
+    } catch (error) {
+      // Remove temporary message if failed
+      setMessages(prev => prev.filter(msg => msg._id !== Date.now()));
+      console.error('Error sending message:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const generateSellerResponse = (userMessage) => {
-    const responses = [
-      "That's a great question! Let me tell you more about the quality and condition.",
-      "I appreciate your interest! This item has been carefully maintained and is in excellent condition.",
-      "Great choice! This piece has a lot of character and unique features.",
-      "I'm glad you're considering this item. It's definitely worth the investment.",
-      "That's a thoughtful question. Let me provide you with all the details you need."
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
-  };
+  const makeOffer = async () => {
+    if (!offerAmount.trim() || !currentChat) return;
 
-  const generateCounterOffer = (userOffer) => {
-    const discount = 0.1 + Math.random() * 0.2; // 10-30% discount
-    return Math.round(userOffer * (1 + discount) * 100) / 100;
-  };
+    const offerMessage = `I'd like to offer ${getCurrencyDisplay(offerAmount, showCurrency)} for this item.`;
+    setOfferAmount('');
+    setLoading(true);
 
-  const acceptOffer = (amount) => {
-    const acceptMessage = {
-      id: messages.length + 1,
-      sender: 'user',
-      message: `Perfect! I accept your offer of ${getCurrencyDisplay(amount, showCurrency)}.`,
-      type: 'accept',
-      amount: amount,
-      timestamp: new Date()
-    };
-    setMessages([...messages, acceptMessage]);
-    
-    setTimeout(() => {
-      const sellerResponse = {
-        id: messages.length + 2,
-        sender: 'seller',
-        message: `Excellent! I'm so glad we could reach an agreement. The item is yours for ${getCurrencyDisplay(amount, showCurrency)}. I'll send you the payment details shortly.`,
-        type: 'message',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, sellerResponse]);
-    }, 1000);
+    try {
+      const response = await sendMessage(currentChat._id, offerMessage);
+
+      if (response.success) {
+        setMessages(response.data.messages);
+        setCurrentChat(response.data);
+      } else {
+        console.error('Failed to send offer:', response.message);
+      }
+    } catch (error) {
+      console.error('Error sending offer:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const closeBargain = () => {
     setIsNegotiating(false);
     setSelectedProduct(null);
+    setCurrentChat(null);
     setMessages([]);
     setNewMessage('');
     setOfferAmount('');
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
       sendMessage();
     }
   };
+
+  const formatTime = (timestamp) => {
+    return new Date(timestamp).toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
+
+  const isOwnMessage = (message) => {
+    return message.senderId === user?._id;
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Please Login</h2>
+          <p className="text-gray-600 mb-6">You need to be logged in to access the bargain chat.</p>
+          <Link to="/login" className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+            Go to Login
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -196,7 +218,7 @@ const Bargain = () => {
             Bargain & Negotiate
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Find great deals on pre-owned and second-hand clothing. Negotiate directly with sellers to get the best prices!
+            Chat directly with sellers to negotiate prices and get the best deals on pre-owned clothing!
           </p>
         </div>
 
@@ -281,43 +303,44 @@ const Bargain = () => {
 
                   {/* Messages */}
                   <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-                    {messages.map((message) => (
-                      <div
-                        key={message.id}
-                        className={`flex transition-all duration-300 ease-in-out ${
-                          message.sender === 'user' ? 'justify-end' : 'justify-start'
-                        }`}
-                      >
-                        <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg transition-all duration-300 ${
-                          message.sender === 'user' 
-                            ? 'bg-blue-500 text-white' 
-                            : 'bg-white text-gray-800 border border-gray-200'
-                        }`}>
-                          <p className="text-sm">{message.message}</p>
-                          {message.amount && (
-                            <div className="mt-2 p-2 bg-blue-50 rounded border border-blue-200">
-                              <span className="text-xs text-blue-600 font-medium">
-                                Offer: {getCurrencyDisplay(message.amount, showCurrency)}
-                              </span>
+                    {loading && messages.length === 0 ? (
+                      <div className="flex justify-center items-center h-full">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                      </div>
+                    ) : (
+                      <>
+                        {messages.map((message) => (
+                          <div
+                            key={message._id}
+                            className={`flex transition-all duration-300 ease-in-out ${
+                              isOwnMessage(message) ? 'justify-end' : 'justify-start'
+                            }`}
+                          >
+                            <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg transition-all duration-300 ${
+                              isOwnMessage(message)
+                                ? 'bg-blue-500 text-white' 
+                                : 'bg-white text-gray-800 border border-gray-200'
+                            }`}>
+                              <p className="text-sm">{message.message}</p>
+                              <p className="text-xs opacity-70 mt-1">
+                                {formatTime(message.timestamp)}
+                              </p>
                             </div>
-                          )}
-                          <p className="text-xs opacity-70 mt-1">
-                            {message.timestamp.toLocaleTimeString()}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {isTyping && (
-                      <div className="flex justify-start transition-all duration-300 ease-in-out">
-                        <div className="bg-white text-gray-800 border border-gray-200 px-4 py-2 rounded-lg">
-                          <div className="flex space-x-1">
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '200ms' }} />
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '400ms' }} />
                           </div>
-                        </div>
-                      </div>
+                        ))}
+                        
+                        {loading && (
+                          <div className="flex justify-start transition-all duration-300 ease-in-out">
+                            <div className="bg-white text-gray-800 border border-gray-200 px-4 py-2 rounded-lg">
+                              <div className="flex space-x-1">
+                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
+                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '200ms' }} />
+                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '400ms' }} />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                     <div ref={messagesEndRef} />
                   </div>
@@ -333,11 +356,13 @@ const Bargain = () => {
                           onKeyPress={handleKeyPress}
                           placeholder="Type your message..."
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                          disabled={loading}
                         />
                       </div>
                       <button
                         onClick={sendMessage}
-                        className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 hover:scale-105 active:scale-95"
+                        disabled={!newMessage.trim() || loading}
+                        className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Send
                       </button>
@@ -352,11 +377,13 @@ const Bargain = () => {
                           onChange={(e) => setOfferAmount(e.target.value)}
                           placeholder="Enter your offer amount..."
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                          disabled={loading}
                         />
                       </div>
                       <button
                         onClick={makeOffer}
-                        className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200 hover:scale-105 active:scale-95"
+                        disabled={!offerAmount.trim() || loading}
+                        className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Make Offer
                       </button>
