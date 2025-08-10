@@ -4,8 +4,10 @@ import { productsAPI } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import ProductCard from '../components/ProductCard'
 import LoadingSpinner from '../components/LoadingSpinner'
+import ChatInterface from '../components/ChatInterface'
+import ChatList from '../components/ChatList'
 
-const Home = () => {
+const Home = ({ onSetChatHandler }) => {
   const { isAuthenticated } = useAuth()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -20,6 +22,16 @@ const Home = () => {
   const [deliveryDate, setDeliveryDate] = useState('')
   const [customization, setCustomization] = useState('')
   const [biddingLoading, setBiddingLoading] = useState(false)
+  
+  // Backend test state
+  const [backendStatus, setBackendStatus] = useState('unknown')
+  const [backendTestLoading, setBackendTestLoading] = useState(false)
+  
+  // Chat state
+  const [showChatInterface, setShowChatInterface] = useState(false)
+  const [showChatList, setShowChatList] = useState(false)
+  const [selectedChatProduct, setSelectedChatProduct] = useState(null)
+  const [selectedChat, setSelectedChat] = useState(null)
 
   const categories = [
     { id: 'all', name: 'All Categories' },
@@ -55,6 +67,13 @@ const Home = () => {
       description: 'Comfortable denim jacket for kids'
     }
   ]
+
+  // Set chat handler for navbar
+  useEffect(() => {
+    if (onSetChatHandler) {
+      onSetChatHandler(() => handleOpenChatList)
+    }
+  }, [onSetChatHandler])
 
   // Fetch products from API
   useEffect(() => {
@@ -96,6 +115,21 @@ const Home = () => {
     setShowBuyNowModal(true)
   }
 
+  const handleChatClick = (product) => {
+    setSelectedChatProduct(product)
+    setShowChatInterface(true)
+  }
+
+  const handleOpenChatList = () => {
+    setShowChatList(true)
+  }
+
+  const handleOpenChat = (chat) => {
+    setSelectedChat(chat)
+    setShowChatList(false)
+    setShowChatInterface(true)
+  }
+
   const handleBidSubmit = async () => {
     if (!isAuthenticated) {
       alert('Please login to place a bid')
@@ -134,6 +168,27 @@ const Home = () => {
     setShowBuyNowModal(false)
     setDeliveryDate('')
     setCustomization('')
+  }
+
+  // Test backend connection
+  const testBackend = async () => {
+    setBackendTestLoading(true)
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/health`)
+      if (response.ok) {
+        const data = await response.json()
+        setBackendStatus('connected')
+        console.log('Backend connected:', data)
+      } else {
+        setBackendStatus('error')
+        console.error('Backend error:', response.status)
+      }
+    } catch (error) {
+      setBackendStatus('error')
+      console.error('Backend connection failed:', error)
+    } finally {
+      setBackendTestLoading(false)
+    }
   }
 
   return (
@@ -184,6 +239,45 @@ const Home = () => {
             >
               Learn More
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Backend Test Section */}
+      <section className="py-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-t border-blue-100">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white rounded-xl shadow-elegant p-6 border border-blue-200">
+            <h3 className="text-xl font-semibold text-blue-900 mb-4">🔧 Backend Connection Test</h3>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <span className="text-sm font-medium text-gray-700">Status:</span>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  backendStatus === 'connected' ? 'bg-green-100 text-green-800' :
+                  backendStatus === 'error' ? 'bg-red-100 text-red-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {backendStatus === 'connected' ? '✅ Connected' :
+                   backendStatus === 'error' ? '❌ Error' :
+                   '⏳ Unknown'}
+                </span>
+                {backendStatus === 'connected' && (
+                  <span className="text-sm text-green-600">Backend is working!</span>
+                )}
+                {backendStatus === 'error' && (
+                  <span className="text-sm text-red-600">Backend connection failed</span>
+                )}
+              </div>
+              <button
+                onClick={testBackend}
+                disabled={backendTestLoading}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg transition-colors duration-200"
+              >
+                {backendTestLoading ? 'Testing...' : 'Test Backend'}
+              </button>
+            </div>
+            <div className="mt-3 text-xs text-gray-500">
+              API URL: {import.meta.env.VITE_API_URL || 'http://localhost:5000'}
+            </div>
           </div>
         </div>
       </section>
@@ -261,6 +355,7 @@ const Home = () => {
                   product={product}
                   onClick={handleProductClick}
                   showBidding={true}
+                  onChatClick={isAuthenticated ? handleChatClick : null}
                   style={{ animationDelay: `${index * 0.1}s` }}
                 />
               ))}
@@ -375,7 +470,7 @@ const Home = () => {
               <h3 className="text-2xl font-elegant font-bold text-neutral-900 mb-2">{selectedProduct.name}</h3>
               <p className="text-neutral-600 mb-4">Premium quality {selectedProduct.category}'s clothing</p>
               <div className="text-3xl font-elegant font-bold text-neutral-900 mb-6">${selectedProduct.price}</div>
-              <div className="flex space-x-4">
+              <div className="flex space-x-4 mb-4">
                 <button
                   onClick={handleBidding}
                   className="flex-1 px-6 py-3 bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-600 hover:to-gold-700 text-white font-medium rounded-xl transition-all duration-300 hover:scale-105"
@@ -389,6 +484,19 @@ const Home = () => {
                   Buy Now
                 </button>
               </div>
+              
+              {/* Chat Button */}
+              {isAuthenticated && (
+                <button
+                  onClick={() => handleChatClick(selectedProduct)}
+                  className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all duration-300 hover:scale-105 flex items-center justify-center space-x-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <span>Chat with Seller</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -514,6 +622,28 @@ const Home = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Chat Interface Modal */}
+      {showChatInterface && selectedChatProduct && (
+        <ChatInterface
+          productId={selectedChatProduct._id}
+          productName={selectedChatProduct.name}
+          sellerId={selectedChatProduct.seller}
+          onClose={() => {
+            setShowChatInterface(false)
+            setSelectedChatProduct(null)
+            setSelectedChat(null)
+          }}
+        />
+      )}
+
+      {/* Chat List Modal */}
+      {showChatList && (
+        <ChatList
+          onOpenChat={handleOpenChat}
+          onClose={() => setShowChatList(false)}
+        />
       )}
     </div>
   )

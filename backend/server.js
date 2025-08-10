@@ -12,6 +12,7 @@ const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
 const userRoutes = require('./routes/users');
+const chatRoutes = require('./routes/chat');
 
 // Import error handling middleware
 const errorMiddleware = require('./middleware/error');
@@ -157,11 +158,29 @@ app.use('/api/users', async (req, res, next) => {
   }
 });
 
+app.use('/api/chat', async (req, res, next) => {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      console.log('Database not connected, attempting connection...');
+      await connectDB();
+    }
+    next();
+  } catch (error) {
+    console.error('Database connection failed:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Database connection failed',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Error handling middleware
 app.use(errorMiddleware);

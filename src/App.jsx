@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -12,15 +12,17 @@ import Bargain from './pages/Bargain'
 import SellerDashboard from './pages/SellerDashboard'
 
 function App() {
+  const [chatHandler, setChatHandler] = useState(null)
+
   return (
     <ErrorBoundary>
       <AuthProvider>
         <Router>
           <div className="App">
-            <Navbar />
+            <Navbar onOpenChatList={() => chatHandler?.() || null} />
             <main className="pt-16 lg:pt-20">
               <Routes>
-                <Route path="/" element={<Home />} />
+                <Route path="/" element={<Home onSetChatHandler={setChatHandler} />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/waiting" element={<Waiting />} />
                 <Route path="/login" element={<Login />} />
