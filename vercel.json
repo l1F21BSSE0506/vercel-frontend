@@ -1,7 +1,8 @@
 {
-  "buildCommand": "npm run build",
+  "framework": "vite",
+  "buildCommand": "npm ci --prefer-offline --no-audit --progress=false && npm run build",
   "outputDirectory": "dist",
-  "installCommand": "rm -rf node_modules package-lock.json && npm install",
+  "installCommand": "npm ci --prefer-offline --no-audit --progress=false",
   "rewrites": [
     {
       "source": "/(.*)",
