@@ -6,8 +6,9 @@ vite.config.js
 postcss.config.js
 tailwind.config.js
 frontend.env.example
+vercel.json
 
-# Ignore root package files
+# Ignore root package files (frontend)
 package.json
 package-lock.json
 node_modules/
