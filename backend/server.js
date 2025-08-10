@@ -189,26 +189,18 @@ const connectDB = async () => {
     throw new Error('MONGODB_URI not configured');
   }
 
-  try {
-    const mongooseOptions = {
-      maxPoolSize: 1,
-      serverSelectionTimeoutMS: 15000,
-      socketTimeoutMS: 30000,
-      bufferCommands: true, // Enable buffering for better compatibility
-      bufferMaxEntries: 0,
-      connectTimeoutMS: 15000,
-      retryWrites: true,
-      w: 'majority'
-    };
+      try {
+      const mongooseOptions = {
+        maxPoolSize: 1,
+        serverSelectionTimeoutMS: 15000,
+        socketTimeoutMS: 30000,
+        connectTimeoutMS: 15000,
+        retryWrites: true,
+        w: 'majority'
+      };
 
-    // Add connection options to URI
-    let mongoUri = process.env.MONGODB_URI;
-    if (!mongoUri.includes('?')) {
-      mongoUri += '?retryWrites=true&w=majority&maxPoolSize=1';
-    }
-
-    console.log('Connecting to MongoDB...');
-    await mongoose.connect(mongoUri, mongooseOptions);
+      console.log('Connecting to MongoDB...');
+      await mongoose.connect(process.env.MONGODB_URI, mongooseOptions);
     isConnected = true;
     console.log('Connected to MongoDB successfully');
     return true;
