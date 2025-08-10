@@ -1,16 +1,5 @@
-# Ignore frontend files
-src/
-public/
-index.html
-vite.config.js
-postcss.config.js
-tailwind.config.js
-frontend.env.example
-
-# Ignore root package files (Railway will use backend/package.json)
-package.json
-package-lock.json
-node_modules/
-
-# Keep backend directory
+# COMPLETELY IGNORE EVERYTHING EXCEPT BACKEND
+*
 !backend/
+!backend/**
+!railway.json

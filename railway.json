@@ -1,7 +1,9 @@
 {
   "build": {
     "builder": "NIXPACKS",
-    "sourceDirectory": "backend"
+    "sourceDirectory": "backend",
+    "buildCommand": "npm ci --production",
+    "startCommand": "npm start"
   },
   "deploy": {
     "restartPolicyType": "ON_FAILURE",
