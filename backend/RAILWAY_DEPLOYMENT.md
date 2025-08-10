@@ -41,9 +41,10 @@ PORT=5000
 
 1. Go to "Settings" tab in your Railway project
 2. Under "Build & Deploy", ensure:
-   - Build Command: `npm install`
-   - Start Command: `npm start`
+   - Build Command: `npm install` (this will run in the backend directory)
+   - Start Command: `npm start` (this will run in the backend directory)
    - Health Check Path: `/health`
+   - Source Directory: `backend` (this is automatically set by railway.json)
 
 ## Step 5: Deploy
 
@@ -74,7 +75,9 @@ PORT=5000
 ## Troubleshooting Common Issues
 
 ### Build Failures
-- Check that all dependencies are in `package.json`
+- **Frontend Build Error**: If you see "vite build" errors, ensure Railway is using the root `railway.json` file that specifies `sourceDirectory: "backend"`
+- **Wrong Directory**: Railway should build from the `backend/` directory, not the root
+- Check that all dependencies are in `backend/package.json`
 - Ensure Node.js version compatibility (your project uses Node 22.x)
 - Check build logs for specific error messages
 
