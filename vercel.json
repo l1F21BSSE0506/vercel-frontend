@@ -1,8 +1,13 @@
 {
   "framework": "vite",
-  "buildCommand": "npm ci --prefer-offline --no-audit --progress=false && npm run build",
+  "buildCommand": "npm install --include=optional && npm run build",
   "outputDirectory": "dist",
-  "installCommand": "npm ci --prefer-offline --no-audit --progress=false",
+  "installCommand": "npm install --include=optional",
+  "functions": {
+    "app/**": {
+      "runtime": "nodejs18.x"
+    }
+  },
   "rewrites": [
     {
       "source": "/(.*)",
