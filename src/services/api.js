@@ -1,9 +1,18 @@
 import axios from 'axios';
 
+// Get API base URL from environment variables
+const getApiBaseUrl = () => {
+  // In production (Vercel), use the Railway backend URL
+  if (import.meta.env.PROD) {
+    return import.meta.env.VITE_API_URL || 'https://your-railway-url.railway.app/api';
+  }
+  // In development, use local backend
+  return import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+};
+
 // Create axios instance with base configuration
 const api = axios.create({
-  // baseURL: 'http://localhost:5000/api', // Original backend
-  baseURL: 'http://localhost:5001/api', // Test server
+  baseURL: getApiBaseUrl(),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
