@@ -251,8 +251,11 @@ mongoose.connection.on('disconnected', () => {
   isConnected = false;
 });
 
-// Initialize connection
-connectDB().catch(console.error);
+// Initialize connection (non-blocking)
+connectDB().catch((error) => {
+  console.error('Initial MongoDB connection failed, but server will continue:', error.message);
+  console.log('Server will start without database connection. Database-dependent routes will fail.');
+});
 
 // Start server for Railway (production) and local development
 const PORT = process.env.PORT || 5000;
@@ -262,6 +265,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`Railway: ${!!process.env.RAILWAY}`);
   console.log(`API URL: http://localhost:${PORT}/api`);
   console.log(`Health check available at: http://localhost:${PORT}/health`);
+  console.log(`MongoDB Status: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'}`);
 });
 
 module.exports = app; 

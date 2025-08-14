@@ -7,7 +7,7 @@ nixPkgs = ["nodejs", "npm"]
 cmds = ["cp -r .railway/* . && cp .railway/.* . 2>/dev/null || true"]
 
 [phases.install]
-cmds = ["npm install"]
+cmds = ["npm install --network-timeout=300000 --maxsockets=1"]
 
 [phases.build]
 cmds = ["npm run build"]
