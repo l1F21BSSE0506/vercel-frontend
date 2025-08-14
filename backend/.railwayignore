@@ -1,7 +1,8 @@
-# Railway ignore file
+# Exclude unnecessary files from Railway deployment
 node_modules/
 .env
-config.env
+.env.local
+.env.*.local
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -12,6 +13,5 @@ yarn-error.log*
 *.swp
 *.swo
 *~
-uploads/*
-!uploads/.gitkeep
+uploads/
 test-*.js
