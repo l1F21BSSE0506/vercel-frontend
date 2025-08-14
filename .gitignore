@@ -67,3 +67,11 @@ jspm_packages/
 # dotenv environment variables file
 .env
 config.env 
+
+# Ignore root package files
+package.json
+package-lock.json
+node_modules/
+
+# Ignore the lock file to prevent platform-specific build issues
+package-lock.json 

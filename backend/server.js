@@ -36,13 +36,20 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Health check route (no database required)
 app.get('/health', (req, res) => {
-  res.json({ 
+  console.log('Health check requested at:', new Date().toISOString());
+  console.log('Environment:', process.env.NODE_ENV);
+  console.log('Railway:', !!process.env.RAILWAY);
+  console.log('Port:', process.env.PORT);
+  
+  res.status(200).json({ 
     status: 'OK', 
     message: 'Threadswear.pk API is running',
     environment: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString(),
     mongodb_uri_set: !!process.env.MONGODB_URI,
-    railway: !!process.env.RAILWAY
+    railway: !!process.env.RAILWAY,
+    port: process.env.PORT || 5000,
+    uptime: process.uptime()
   });
 });
 
@@ -247,13 +254,14 @@ mongoose.connection.on('disconnected', () => {
 // Initialize connection
 connectDB().catch(console.error);
 
-// Only start server if not in serverless environment
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-    console.log(`API URL: http://localhost:${PORT}/api`);
-  });
-}
+// Start server for Railway (production) and local development
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV}`);
+  console.log(`Railway: ${!!process.env.RAILWAY}`);
+  console.log(`API URL: http://localhost:${PORT}/api`);
+  console.log(`Health check available at: http://localhost:${PORT}/health`);
+});
 
 module.exports = app; 
