@@ -4,7 +4,7 @@ import axios from 'axios';
 const getApiBaseUrl = () => {
   // In production (Vercel), use the Railway backend URL
   if (import.meta.env.PROD) {
-    return import.meta.env.VITE_API_URL || 'https://your-railway-url.railway.app/api';
+    return import.meta.env.VITE_API_URL || 'https://vercel-frontend.railway.app';
   }
   // In development, use local backend
   return import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
