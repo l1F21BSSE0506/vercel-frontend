@@ -2,12 +2,22 @@ import axios from 'axios';
 
 // Get API base URL from environment variables
 const getApiBaseUrl = () => {
+  console.log('Environment check:', {
+    PROD: import.meta.env.PROD,
+    VITE_API_URL: import.meta.env.VITE_API_URL,
+    NODE_ENV: import.meta.env.NODE_ENV
+  });
+  
   // In production (Vercel), use the Railway backend URL
   if (import.meta.env.PROD) {
-    return import.meta.env.VITE_API_URL || 'https://vercel-frontend-production.up.railway.app';
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://vercel-frontend-production.up.railway.app';
+    console.log('Production API URL:', apiUrl);
+    return apiUrl;
   }
   // In development, use local backend
-  return import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+  const devUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+  console.log('Development API URL:', devUrl);
+  return devUrl;
 };
 
 // Create axios instance with base configuration
