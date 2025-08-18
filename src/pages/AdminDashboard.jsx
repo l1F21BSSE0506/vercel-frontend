@@ -43,7 +43,7 @@ const AdminDashboard = () => {
       setLoading(true);
       
       // Fetch dashboard stats
-      const statsResponse = await fetch('http://localhost:5000/api/admin/dashboard', {
+      const statsResponse = await fetch('/api/admin/dashboard', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -53,7 +53,7 @@ const AdminDashboard = () => {
 
       // Fetch products with pagination
       const productsResponse = await fetch(
-        `http://localhost:5000/api/admin/products?page=${currentPage}&limit=10&search=${searchTerm}&category=${selectedCategory}`,
+        `/api/admin/products?page=${currentPage}&limit=10&search=${searchTerm}&category=${selectedCategory}`,
         {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -75,7 +75,7 @@ const AdminDashboard = () => {
   const handleAddProduct = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:5000/api/admin/products', {
+      const response = await fetch('/api/admin/products', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,7 +107,7 @@ const AdminDashboard = () => {
   const handleUpdateProduct = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/products/${editingProduct._id}`, {
+      const response = await fetch(`/api/admin/products/${editingProduct._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -133,7 +133,7 @@ const AdminDashboard = () => {
   const handleDeleteProduct = async (productId) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       try {
-        const response = await fetch(`http://localhost:5000/api/admin/products/${productId}`, {
+        const response = await fetch(`/api/admin/products/${productId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -151,7 +151,7 @@ const AdminDashboard = () => {
 
   const addSampleProducts = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/seed-products', {
+      const response = await fetch('/api/admin/seed-products', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
