@@ -36,10 +36,10 @@ After updating environment variables, redeploy your Railway backend.
 ### Step 3: Verify Frontend Environment
 Ensure your Vercel frontend has this environment variable:
 ```bash
-VITE_API_URL=https://vercel-frontend-production.up.railway.app/api
+VITE_API_URL=https://vercel-frontend-production.up.railway.app
 ```
 
-**IMPORTANT**: Notice the `/api` at the end - this is crucial!
+**IMPORTANT**: DO NOT include `/api` at the end - the API calls will add it automatically!
 
 ### Step 4: Test CORS Debug Route
 Visit: `https://vercel-frontend-production.up.railway.app/api/cors-debug`
