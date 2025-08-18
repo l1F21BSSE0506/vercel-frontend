@@ -8,21 +8,30 @@ router.post('/register', async (req, res) => {
   try {
     const { name, email, password, role = 'buyer' } = req.body;
 
+    // Validate input
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name, email, and password are required'
+      });
+    }
+
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: 'User already exists'
+        message: 'User with this email already exists'
       });
     }
 
     // Create user
     const user = await User.create({
-      name,
-      email,
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
       password,
-      role
+      role: role || 'buyer',
+      isVerified: true
     });
 
     // Create token
@@ -39,9 +48,10 @@ router.post('/register', async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Registration error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message || 'Registration failed'
     });
   }
 });
@@ -59,8 +69,8 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Finding user in database
-    const user = await User.findOne({ email }).select('+password');
+    // Finding user in database (case-insensitive email search)
+    const user = await User.findOne({ email: email.toLowerCase().trim() }).select('+password');
 
     if (!user) {
       return res.status(401).json({
@@ -89,13 +99,15 @@ router.post('/login', async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        isVerified: user.isVerified
       }
     });
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message || 'Login failed'
     });
   }
 });
@@ -254,6 +266,52 @@ router.delete('/admin/user/:id', isAuthenticatedUser, authorizeRoles('admin'), a
       success: false,
       message: error.message
     });
+  }
+});
+
+// Create admin user (for initial setup) => /api/auth/create-admin
+router.post('/create-admin', async (req, res) => {
+  try {
+    const { email, password, name } = req.body;
+
+    // Check if admin already exists
+    const existingAdmin = await User.findOne({ role: 'admin' });
+    if (existingAdmin) {
+      return res.status(400).json({
+        success: false,
+        message: 'Admin user already exists'
+      });
+    }
+
+    // Create admin user
+    const adminUser = await User.create({
+      name: name || 'Admin User',
+      email: email.toLowerCase().trim(),
+      password,
+      role: 'admin',
+      isVerified: true
+    });
+
+    // Create token
+    const token = adminUser.getJwtToken();
+
+    res.status(201).json({
+      success: true,
+      message: 'Admin user created successfully',
+      token,
+      user: {
+        id: adminUser._id,
+        name: adminUser.name,
+        email: adminUser.email,
+        role: adminUser.role
+      }
+    });
+  } catch (error) {
+    console.error('Admin creation error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to create admin user'
+      });
   }
 });
 

@@ -64,6 +64,7 @@ api.interceptors.response.use(
 export const authAPI = {
   login: (credentials) => api.post('/api/auth/login', credentials),
   register: (userData) => api.post('/api/auth/register', userData),
+  createAdmin: (adminData) => api.post('/api/auth/create-admin', adminData),
   logout: () => api.post('/api/auth/logout'),
   getProfile: () => api.get('/api/auth/me'),
   updateProfile: (data) => api.put('/api/auth/me/update', data),
