@@ -279,6 +279,12 @@ setTimeout(() => {
 
 // Start server for Railway (production) and local development
 const PORT = process.env.PORT || 5000;
+console.log('Environment variables check:');
+console.log('- PORT:', process.env.PORT);
+console.log('- NODE_ENV:', process.env.NODE_ENV);
+console.log('- RAILWAY:', process.env.RAILWAY);
+console.log('- Using port:', PORT);
+
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
