@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const { generateToken } = require('../utils/jwt');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -75,21 +75,7 @@ userSchema.methods.comparePassword = async function(enteredPassword) {
 
 // Return JWT token
 userSchema.methods.getJwtToken = function() {
-  console.log('🔍 Debug - JWT_SECRET:', process.env.JWT_SECRET ? 'Set' : 'Not set');
-  console.log('🔍 Debug - JWT_EXPIRE:', process.env.JWT_EXPIRE);
-  console.log('🔍 Debug - Current working directory:', process.cwd());
-  
-  if (!process.env.JWT_SECRET) {
-    throw new Error('JWT_SECRET is not configured');
-  }
-  
-  if (!process.env.JWT_EXPIRE) {
-    throw new Error('JWT_EXPIRE is not configured');
-  }
-  
-  return jwt.sign({ id: this._id, role: this.role }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE
-  });
+  return generateToken({ id: this._id, role: this.role });
 };
 
 module.exports = mongoose.model('User', userSchema); 

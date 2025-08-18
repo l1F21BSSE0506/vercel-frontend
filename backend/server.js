@@ -8,13 +8,6 @@ const path = require('path');
 const path = require('path');
 dotenv.config({ path: path.join(__dirname, 'config.env') });
 
-// Debug: Check if environment variables are loaded
-console.log('🔍 Environment check:');
-console.log('  JWT_SECRET:', process.env.JWT_SECRET ? 'Set' : 'Not set');
-console.log('  JWT_EXPIRE:', process.env.JWT_EXPIRE);
-console.log('  MONGODB_URI:', process.env.MONGODB_URI ? 'Set' : 'Not set');
-console.log('  Config file path:', path.join(__dirname, 'config.env'));
-
 // Import routes
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');

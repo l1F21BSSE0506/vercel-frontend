@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken');
+const { verifyToken } = require('../utils/jwt');
 const User = require('../models/User');
 
 // Protect routes
@@ -23,7 +23,7 @@ exports.isAuthenticatedUser = async (req, res, next) => {
     }
 
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret');
+    const decoded = verifyToken(token);
     req.user = await User.findById(decoded.id);
     
     if (!req.user) {
