@@ -1,0 +1,5 @@
+[33m2bc559b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Fix routing: Add missing /admin route for AdminDashboard component
+[33m06c7202[m CRITICAL FIX: Add /api prefix to all API endpoints to match backend route structure
+[33md2a3faa[m Fix AdminDashboard: Remove hardcoded localhost URLs, use relative API paths for Railway backend
+[33m8b42d51[m Fix port configuration: Add PORT=5000 requirement and debugging for Railway deployment
+[33m13f8c2b[m Emergency fix: Simplify CORS configuration to prevent Railway crashes
