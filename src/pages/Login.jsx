@@ -61,11 +61,11 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
       {/* Background Pattern and Floating Elements */}
-      <div className="absolute inset-0 bg-elegant-pattern opacity-5"></div>
+      <div className="absolute inset-0 bg-gray-100 opacity-5"></div>
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-gold-400/10 rounded-full blur-3xl animate-float"></div>
-        <div className="absolute bottom-20 right-10 w-40 h-40 bg-secondary-400/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-primary-400/10 rounded-full blur-2xl animate-float" style={{ animationDelay: '4s' }}></div>
+        <div className="absolute top-20 left-10 w-32 h-32 bg-yellow-400/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-10 w-40 h-40 bg-blue-400/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-green-400/10 rounded-full blur-2xl"></div>
       </div>
 
       <div className="relative max-w-md w-full space-y-8">
@@ -73,19 +73,19 @@ const Login = () => {
         <div className="text-center">
           <Link to="/" className="inline-flex items-center space-x-3 mb-8 group">
             <div className="relative">
-              <div className="w-12 h-12 bg-gradient-to-br from-neutral-800 to-neutral-900 rounded-xl flex items-center justify-center shadow-elegant group-hover:shadow-luxury transition-all duration-300">
-                <span className="text-white font-elegant font-bold text-xl">T</span>
+              <div className="w-12 h-12 bg-gradient-to-br from-neutral-800 to-neutral-900 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300">
+                <span className="text-white font-bold text-xl">T</span>
               </div>
-              <div className="absolute -inset-1 bg-gradient-to-br from-gold-400 to-gold-600 rounded-xl blur opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+              <div className="absolute -inset-1 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl blur opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
             </div>
-            <span className="font-elegant font-bold text-3xl text-neutral-900">Threadswear.pk</span>
+            <span className="font-bold text-3xl text-neutral-900">Threadswear.pk</span>
           </Link>
-          <h2 className="text-3xl font-elegant font-bold text-neutral-900 mb-2">Welcome Back</h2>
+          <h2 className="text-3xl font-bold text-neutral-900 mb-2">Welcome Back</h2>
           <p className="text-neutral-600 text-lg">Sign in to your second-hand fashion marketplace</p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-white rounded-2xl shadow-luxury p-8 border border-neutral-200/50">
+        <div className="bg-white rounded-2xl shadow-xl p-8 border border-neutral-200/50">
           {error && (
             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
               {error}

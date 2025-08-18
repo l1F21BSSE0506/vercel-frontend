@@ -32,6 +32,7 @@ function App() {
                 <Route path="/bargain" element={<Bargain />} />
                 <Route path="/seller-dashboard" element={<SellerDashboard />} />
                 <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/test" element={<div className="p-8 text-center"><h1 className="text-2xl font-bold">Test Route Working!</h1></div>} />
               </Routes>
             </main>
             <Footer />
