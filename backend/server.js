@@ -19,54 +19,23 @@ const errorMiddleware = require('./middleware/error');
 
 const app = express();
 
-// Enhanced CORS configuration
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      'http://localhost:5173',
-      'http://localhost:3000',
-      'https://vercel-frontend-liart.vercel.app',
-      'https://vercel-frontend-git-main-omers-projects-0989ee6d.vercel.app',
-      process.env.FRONTEND_URL
-    ].filter(Boolean);
-    
-    console.log('CORS check - Origin:', origin, 'Allowed:', allowedOrigins);
-    
-    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+// Simple CORS configuration
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://vercel-frontend-liart.vercel.app',
+    'https://vercel-frontend-git-main-omers-projects-0989ee6d.vercel.app',
+    process.env.FRONTEND_URL
+  ].filter(Boolean),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token', 'Origin', 'Accept', 'X-Requested-With'],
-  exposedHeaders: ['Content-Length', 'X-Requested-With'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204
-};
-
-app.use(cors(corsOptions));
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token', 'Origin', 'Accept'],
+  exposedHeaders: ['Content-Length', 'X-Requested-With']
+}));
 
 // Handle CORS preflight requests
-app.options('*', cors(corsOptions));
-
-// Add CORS headers to all responses
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://vercel-frontend-liart.vercel.app');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-auth-token, Origin, Accept, X-Requested-With');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
-  }
-});
+app.options('*', cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -115,37 +84,12 @@ app.get('/api/test', (req, res) => {
   });
 });
 
-// CORS debug route
-app.get('/api/cors-debug', (req, res) => {
+// Simple CORS test route
+app.get('/api/cors-test', (req, res) => {
   res.json({
-    message: 'CORS debug info',
+    message: 'CORS is working!',
     origin: req.headers.origin,
-    referer: req.headers.referer,
-    userAgent: req.headers['user-agent'],
-    corsEnabled: true,
-    allowedOrigins: [
-      'http://localhost:5173',
-      'http://localhost:3000',
-      'https://vercel-frontend-liart.vercel.app',
-      'https://vercel-frontend-git-main-omers-projects-0989ee6d.vercel.app',
-      process.env.FRONTEND_URL
-    ].filter(Boolean),
-    headers: req.headers,
     timestamp: new Date().toISOString()
-  });
-});
-
-// Simple test route for CORS verification
-app.get('/api/test-cors', (req, res) => {
-  res.json({
-    message: 'CORS test successful!',
-    origin: req.headers.origin,
-    timestamp: new Date().toISOString(),
-    corsHeaders: {
-      'Access-Control-Allow-Origin': res.getHeader('Access-Control-Allow-Origin'),
-      'Access-Control-Allow-Methods': res.getHeader('Access-Control-Allow-Methods'),
-      'Access-Control-Allow-Headers': res.getHeader('Access-Control-Allow-Headers')
-    }
   });
 });
 
