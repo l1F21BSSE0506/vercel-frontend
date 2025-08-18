@@ -11,6 +11,7 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Bargain from './pages/Bargain'
 import SellerDashboard from './pages/SellerDashboard'
+import AdminDashboard from './pages/AdminDashboard'
 
 function App() {
   const [chatHandler, setChatHandler] = useState(null)
@@ -30,6 +31,7 @@ function App() {
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/bargain" element={<Bargain />} />
                 <Route path="/seller-dashboard" element={<SellerDashboard />} />
+                <Route path="/admin" element={<AdminDashboard />} />
               </Routes>
             </main>
             <Footer />
