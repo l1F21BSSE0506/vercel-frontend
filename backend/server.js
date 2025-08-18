@@ -24,10 +24,21 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://localhost:3000',
+    'https://vercel-frontend-liart.vercel.app',
+    'https://vercel-frontend-git-main-omers-projects-0989ee6d.vercel.app',
     process.env.FRONTEND_URL
   ].filter(Boolean),
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token', 'Origin', 'Accept'],
+  exposedHeaders: ['Content-Length', 'X-Requested-With'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
+
+// Handle CORS preflight requests
+app.options('*', cors());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -72,6 +83,24 @@ app.get('/api/test', (req, res) => {
     env: process.env.NODE_ENV,
     railway: !!process.env.RAILWAY,
     mongodb_uri_set: !!process.env.MONGODB_URI
+  });
+});
+
+// CORS debug route
+app.get('/api/cors-debug', (req, res) => {
+  res.json({
+    message: 'CORS debug info',
+    origin: req.headers.origin,
+    referer: req.headers.referer,
+    userAgent: req.headers['user-agent'],
+    corsEnabled: true,
+    allowedOrigins: [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'https://vercel-frontend-liart.vercel.app',
+      'https://vercel-frontend-git-main-omers-projects-0989ee6d.vercel.app',
+      process.env.FRONTEND_URL
+    ].filter(Boolean)
   });
 });
 
@@ -252,20 +281,39 @@ mongoose.connection.on('disconnected', () => {
 });
 
 // Initialize connection (non-blocking)
-connectDB().catch((error) => {
-  console.error('Initial MongoDB connection failed, but server will continue:', error.message);
-  console.log('Server will start without database connection. Database-dependent routes will fail.');
-});
+setTimeout(() => {
+  connectDB().catch((error) => {
+    console.error('Initial MongoDB connection failed, but server will continue:', error.message);
+    console.log('Server will start without database connection. Database-dependent routes will fail.');
+  });
+}, 1000); // Delay connection attempt to allow server to start first
 
 // Start server for Railway (production) and local development
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
   console.log(`Railway: ${!!process.env.RAILWAY}`);
   console.log(`API URL: http://localhost:${PORT}/api`);
   console.log(`Health check available at: http://localhost:${PORT}/health`);
   console.log(`MongoDB Status: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'}`);
+});
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+    process.exit(0);
+  });
 });
 
 module.exports = app; 
