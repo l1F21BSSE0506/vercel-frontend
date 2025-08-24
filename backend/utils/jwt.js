@@ -2,7 +2,13 @@ const jwt = require('jsonwebtoken');
 
 // JWT configuration with fallbacks
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key-change-in-production';
-const JWT_EXPIRE = process.env.JWT_EXPIRE || 604800; // 7 days in seconds
+const JWT_EXPIRE = parseInt(process.env.JWT_EXPIRE) || 604800; // 7 days in seconds
+
+// Debug logging for Railway
+console.log('🔍 JWT Configuration:');
+console.log('  JWT_SECRET:', JWT_SECRET ? 'Set' : 'Not set');
+console.log('  JWT_EXPIRE:', JWT_EXPIRE);
+console.log('  Process.env.JWT_EXPIRE:', process.env.JWT_EXPIRE);
 
 /**
  * Generate JWT token for user

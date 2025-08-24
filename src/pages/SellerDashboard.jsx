@@ -72,9 +72,13 @@ const SellerDashboard = () => {
       
       // Fetch admin's chats
       const chatsResponse = await chatAPI.getMyChats();
-      const adminChats = chatsResponse.data.filter(chat => 
-        chat.sellerId._id === user._id || chat.sellerId === user._id
-      );
+      // For admin users, show all chats without filtering
+      // For sellers, only show chats where they are the seller
+      const adminChats = user.role === 'admin' 
+        ? chatsResponse.data 
+        : chatsResponse.data.filter(chat => 
+            chat.sellerId._id === user._id || chat.sellerId === user._id
+          );
       setChats(adminChats);
       
       // Calculate stats
@@ -875,4 +879,4 @@ const SellerDashboard = () => {
   );
 };
 
-export default SellerDashboard; 
+export default SellerDashboard;

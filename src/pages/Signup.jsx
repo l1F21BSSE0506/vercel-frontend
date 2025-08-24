@@ -9,7 +9,7 @@ const Signup = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'buyer'
+    role: 'admin'
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -186,19 +186,9 @@ const Signup = () => {
               />
             </div>
 
-            {/* Role Selection */}
-            <div>
-              <label htmlFor="role" className="block text-sm font-semibold text-neutral-700 mb-2">Account Type</label>
-              <select
-                id="role"
-                name="role"
-                value={formData.role}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-neutral-300 rounded-xl focus:ring-2 focus:ring-gold-500 focus:border-transparent transition-all duration-300 bg-white"
-              >
-                <option value="buyer">Buyer - Browse and purchase items</option>
-                <option value="seller">Seller - List and sell your items</option>
-              </select>
+            {/* Admin Account Notice */}
+            <div className="p-3 bg-blue-100 border border-blue-400 text-blue-700 rounded-lg">
+              <p>You are creating an admin account for the system.</p>
             </div>
 
             {/* Password Field */}
@@ -303,4 +293,4 @@ const Signup = () => {
   )
 }
 
-export default Signup 
+export default Signup

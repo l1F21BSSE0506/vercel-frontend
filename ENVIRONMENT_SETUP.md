@@ -114,3 +114,4 @@ node -e "console.log('JWT_SECRET:', !!process.env.JWT_SECRET)"
 Once you set these environment variables in Railway, your deployment should work! 🚀
 
 
+
