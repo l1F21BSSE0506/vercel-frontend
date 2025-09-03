@@ -13,6 +13,7 @@ const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
 const userRoutes = require('./routes/users');
 const chatRoutes = require('./routes/chat');
+const adminRoutes = require('./routes/admin');
 
 // Import error handling middleware
 const errorMiddleware = require('./middleware/error');
@@ -179,6 +180,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error handling middleware
 app.use(errorMiddleware);
@@ -256,4 +258,4 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
   });
 }
 
-module.exports = app; 
+module.exports = app;
