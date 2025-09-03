@@ -121,8 +121,7 @@ router.put('/:id', isAuthenticatedUser, authorizeRoles('seller', 'admin'), async
 
     product = await Product.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
-      runValidators: true,
-      useFindAndModify: false
+      runValidators: true
     });
 
     res.status(200).json({
@@ -157,7 +156,7 @@ router.delete('/:id', isAuthenticatedUser, authorizeRoles('seller', 'admin'), as
       });
     }
 
-    await product.remove();
+    await Product.findByIdAndDelete(req.params.id);
 
     res.status(200).json({
       success: true,
@@ -284,8 +283,7 @@ router.put('/admin/:id/status', isAuthenticatedUser, authorizeRoles('admin'), as
       { isAvailable },
       {
         new: true,
-        runValidators: true,
-        useFindAndModify: false
+        runValidators: true
       }
     );
 

@@ -194,8 +194,7 @@ router.put('/admin/:id', isAuthenticatedUser, authorizeRoles('admin'), async (re
   try {
     const order = await Order.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
-      runValidators: true,
-      useFindAndModify: false
+      runValidators: true
     });
 
     if (!order) {
@@ -229,7 +228,7 @@ router.delete('/admin/:id', isAuthenticatedUser, authorizeRoles('admin'), async 
       });
     }
 
-    await order.remove();
+    await Order.findByIdAndDelete(req.params.id);
 
     res.status(200).json({
       success: true,

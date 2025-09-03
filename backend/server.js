@@ -5,7 +5,6 @@ const dotenv = require('dotenv');
 const path = require('path');
 
 // Load environment variables
-const path = require('path');
 dotenv.config({ path: path.join(__dirname, 'config.env') });
 
 // Import routes
@@ -14,6 +13,7 @@ const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
 const userRoutes = require('./routes/users');
 const chatRoutes = require('./routes/chat');
+const adminRoutes = require('./routes/admin');
 
 // Import error handling middleware
 const errorMiddleware = require('./middleware/error');
@@ -205,6 +205,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error handling middleware
 app.use(errorMiddleware);
@@ -312,4 +313,4 @@ process.on('SIGINT', () => {
   });
 });
 
-module.exports = app; 
+module.exports = app;

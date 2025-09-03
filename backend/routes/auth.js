@@ -113,7 +113,7 @@ router.post('/login', async (req, res) => {
 });
 
 // Logout user => /api/auth/logout
-router.get('/logout', (req, res) => {
+router.post('/logout', (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Logged out successfully'
@@ -149,8 +149,7 @@ router.put('/me/update', isAuthenticatedUser, async (req, res) => {
 
     const user = await User.findByIdAndUpdate(req.user.id, newUserData, {
       new: true,
-      runValidators: true,
-      useFindAndModify: false
+      runValidators: true
     });
 
     res.status(200).json({
@@ -220,8 +219,7 @@ router.put('/admin/user/:id', isAuthenticatedUser, authorizeRoles('admin'), asyn
 
     const user = await User.findByIdAndUpdate(req.params.id, newUserData, {
       new: true,
-      runValidators: true,
-      useFindAndModify: false
+      runValidators: true
     });
 
     if (!user) {
@@ -255,7 +253,7 @@ router.delete('/admin/user/:id', isAuthenticatedUser, authorizeRoles('admin'), a
       });
     }
 
-    await user.remove();
+    await User.findByIdAndDelete(req.params.id);
 
     res.status(200).json({
       success: true,

@@ -32,8 +32,7 @@ router.put('/profile/update', isAuthenticatedUser, async (req, res) => {
 
     const user = await User.findByIdAndUpdate(req.user.id, newUserData, {
       new: true,
-      runValidators: true,
-      useFindAndModify: false
+      runValidators: true
     });
 
     res.status(200).json({
@@ -106,8 +105,7 @@ router.put('/admin/:id', isAuthenticatedUser, authorizeRoles('admin'), async (re
 
     const user = await User.findByIdAndUpdate(req.params.id, newUserData, {
       new: true,
-      runValidators: true,
-      useFindAndModify: false
+      runValidators: true
     });
 
     if (!user) {
