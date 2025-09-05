@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { productsAPI, chatAPI } from '../services/api';
+import { productsAPI, chatAPI, adminAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const AdminDashboard = () => {
@@ -65,22 +65,21 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
       
-      // Fetch dashboard stats using API service
-      const statsResponse = await productsAPI.getAll({ admin: true });
+      // Use admin API for dashboard stats
+      const statsResponse = await adminAPI.getDashboard();
       setStats(statsResponse.data.stats);
-
-      // Fetch products with pagination using API service
-      const productsResponse = await productsAPI.getAll({
+  
+      // Use admin API for products with pagination
+      const productsResponse = await adminAPI.getProducts({
         page: currentPage,
         limit: 10,
         search: searchTerm,
-        category: selectedCategory,
-        admin: true
+        category: selectedCategory
       });
       setProducts(productsResponse.data.products);
       setTotalPages(productsResponse.data.pagination.pages);
       
-      // Fetch admin's chats
+      // Fetch admin's chats (this one is correct)
       const chatsResponse = await chatAPI.getMyChats();
       setChats(chatsResponse.data);
       
@@ -107,48 +106,33 @@ const AdminDashboard = () => {
   const handleAddProduct = async (e) => {
     e.preventDefault();
     try {
-      // Create form data for file upload
       const formData = new FormData();
       
-      // Add all product details to formData
-      const productData = {
-        ...newProduct,
-        price: parseFloat(newProduct.price),
-        currentBid: newProduct.currentBid ? parseFloat(newProduct.currentBid) : undefined,
-        minBidIncrement: newProduct.minBidIncrement ? parseFloat(newProduct.minBidIncrement) : undefined,
-        images: newProduct.images.filter(img => img.trim() !== '')
-      };
-      
-      Object.keys(productData).forEach(key => {
-        formData.append(key, typeof productData[key] === 'object' ? 
-          JSON.stringify(productData[key]) : productData[key]);
+      // Add product data
+      Object.keys(newProduct).forEach(key => {
+        if (key !== 'images') {
+          formData.append(key, newProduct[key]);
+        }
       });
       
-      // Add image file if selected
+      // Add image if selected
       if (productImage) {
         formData.append('productImage', productImage);
       }
       
-      const response = await fetch('/api/admin/products', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-          // Note: Don't set Content-Type with FormData, browser will set it with boundary
-        },
-        body: formData
+      // Use admin API instead of direct fetch
+      await adminAPI.createProduct(formData);
+      
+      // Reset form and refresh data
+      setShowAddForm(false);
+      setNewProduct({
+        name: '', description: '', price: '', condition: 'New',
+        category: '', size: '', brand: '', images: [''],
+        isAvailable: true, biddingEnabled: false, currentBid: '', minBidIncrement: ''
       });
-
-      if (response.ok) {
-        setShowAddForm(false);
-        setNewProduct({
-          name: '', description: '', price: '', condition: 'New',
-          category: '', size: '', brand: '', images: [''],
-          isAvailable: true, biddingEnabled: false, currentBid: '', minBidIncrement: ''
-        });
-        setProductImage(null);
-        setImagePreview('');
-        fetchDashboardData();
-      }
+      setProductImage(null);
+      setImagePreview('');
+      fetchDashboardData();
     } catch (err) {
       setError('Failed to add product');
     }
@@ -177,7 +161,8 @@ const AdminDashboard = () => {
         ...editingProduct,
         price: parseFloat(editingProduct.price),
         currentBid: editingProduct.currentBid ? parseFloat(editingProduct.currentBid) : undefined,
-        minBidIncrement: editingProduct.minBidIncrement ? parseFloat(editingProduct.minBidIncrement) : undefined
+        minBidIncrement: editingProduct.minBidIncrement ? parseFloat(editingProduct.minBidIncrement) : undefined,
+        images: newProduct.images.filter(img => img.trim() !== '')
       };
       
       Object.keys(productData).forEach(key => {

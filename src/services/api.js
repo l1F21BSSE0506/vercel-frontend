@@ -112,4 +112,18 @@ export const startChat = (data) => api.post('/chat/start-chat', data);
 export const sendMessage = (chatId, message) => api.post(`/chat/${chatId}/send-message`, { message });
 export const getChat = (chatId) => api.get(`/chat/${chatId}`);
 
-export default api; 
+// Admin API
+export const adminAPI = {
+  getDashboard: () => api.get('/admin/dashboard'),
+  getProducts: (params) => api.get('/admin/products', { params }),
+  createProduct: (formData) => api.post('/admin/products', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  updateProduct: (id, formData) => api.put(`/admin/products/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  deleteProduct: (id) => api.delete(`/admin/products/${id}`),
+  seedProducts: () => api.post('/admin/seed-products')
+};
+
+export default api;
