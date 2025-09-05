@@ -1,7 +1,21 @@
 {
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://vercel-frontend-production.up.railway.app/api/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
+  "version": 2,
+  "builds": [
+    {
+      "src": "backend/server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/backend/server.js"
+    }
+  ],
+  "functions": {
+    "backend/server.js": {
+      "maxDuration": 30
+    }
+  }
 }
 
