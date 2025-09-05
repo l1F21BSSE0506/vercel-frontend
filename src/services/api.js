@@ -123,7 +123,19 @@ export const adminAPI = {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
   deleteProduct: (id) => api.delete(`/admin/products/${id}`),
-  seedProducts: () => api.post('/admin/seed-products')
+  seedProducts: () => api.post('/admin/seed-products'),
+  
+  // Orders management
+  getAllOrders: (params) => api.get('/admin/orders', { params }),
+  getOrderById: (id) => api.get(`/admin/orders/${id}`),
+  updateOrderStatus: (id, status) => api.put(`/admin/orders/${id}/status`, { status }),
+  
+  // Users management
+  getAllUsers: (params) => api.get('/admin/users', { params }),
+  getUserById: (id) => api.get(`/admin/users/${id}`),
+  updateUserRole: (id, role) => api.put(`/admin/users/${id}/role`, { role }),
+  suspendUser: (id) => api.put(`/admin/users/${id}/suspend`),
+  activateUser: (id) => api.put(`/admin/users/${id}/activate`)
 };
 
 export default api;
