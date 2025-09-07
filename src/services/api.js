@@ -8,13 +8,9 @@ const getApiBaseUrl = () => {
     NODE_ENV: import.meta.env.NODE_ENV
   });
   
-  // In production (Vercel), use the Railway backend URL
+  // In production (Vercel), use relative API URL since both frontend and backend are on same domain
   if (import.meta.env.PROD) {
-    const apiUrl = import.meta.env.VITE_API_URL;
-    if (!apiUrl) {
-      console.error('VITE_API_URL environment variable is not set for production!');
-      throw new Error('API URL not configured for production');
-    }
+    const apiUrl = import.meta.env.VITE_API_URL || '/api';
     console.log('Production API URL:', apiUrl);
     return apiUrl;
   }
