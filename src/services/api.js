@@ -8,11 +8,10 @@ const getApiBaseUrl = () => {
     NODE_ENV: import.meta.env.NODE_ENV
   });
   
-  // In production (Vercel), use relative API URL since both frontend and backend are on same domain
+  // In production (Vercel), always use relative API URL since both frontend and backend are on same domain
   if (import.meta.env.PROD) {
-    const apiUrl = import.meta.env.VITE_API_URL || '/api';
-    console.log('Production API URL:', apiUrl);
-    return apiUrl;
+    console.log('Production API URL: /api');
+    return '/api';
   }
   // In development, use local backend
   const devUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
